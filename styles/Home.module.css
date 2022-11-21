@@ -45,8 +45,7 @@
   font-size: 4rem;
 }
 
-.title,
-.description {
+.title {
   text-align: center;
 }
 
@@ -106,6 +105,21 @@
 .logo {
   height: 1em;
   margin-left: 0.5rem;
+}
+
+
+.todoList li::before {
+  content: '-';
+}
+
+.todoList li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.todoForm label {
+  color: white !important;
 }
 
 @media (max-width: 600px) {

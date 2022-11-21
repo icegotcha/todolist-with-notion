@@ -1,8 +1,41 @@
 import Head from 'next/head'
-import Image from 'next/image'
+import { useMutation, useQuery } from 'react-query'
+import { FileTextOutlined } from '@ant-design/icons'
 import styles from '../styles/Home.module.css'
+import { Button, Checkbox, Form, Input, Tag, Tooltip } from 'antd'
+
+interface ITodo {
+  name: string
+  description: string
+  is_high_priority: string
+}
 
 export default function Home() {
+  const todoListQuery = useQuery(['todo-list'], async () => {
+    const r = await fetch('/api/todo')
+    return r.json()
+  })
+  const todoAddMutation = useMutation((data: ITodo) => fetch('/api/todo', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  }), {
+    onSuccess: () => {
+      todoListQuery.refetch()
+    }
+  })
+
+  const onSubmitForm = async (value: ITodo) => {
+    try {
+      await todoAddMutation.mutateAsync(value)
+    } catch(error) {
+      console.error(error)
+    }
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -13,59 +46,64 @@ export default function Home() {
 
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
+          Simple Todo App
         </h1>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.tsx</code>
-        </p>
+        <div className={styles.description}>
+          <h2>
+            What will you do today?
+          </h2>
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+          {todoListQuery.data && (
+            <ul className={styles.todoList}>
+              {todoListQuery.data.list.map((item: any, index: number) => (
+                <li key={index}>
+                  {item.properties['Name'].title[0].text.content}
+                  <Tooltip title={item.properties['Description'].rich_text[0].text.content} color='magenta'><FileTextOutlined /></Tooltip>
+                  {item.properties['High Priority'].checkbox && <Tag color='error'>High Priority</Tag>}
+                </li>
+              ))}
+            </ul>
+          )}
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+          <h2>
+            Add new task
+          </h2>
 
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className={styles.card}
+          <Form
+            className={styles.todoForm}
+            labelCol={{ span: 8 }}
+            wrapperCol={{ span: 16 }}
+            onFinish={onSubmitForm}
+            autoComplete='off'
           >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
+            <Form.Item
+              label='Name'
+              name='name'
 
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+              rules={[{ required: true }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              label='Description'
+              name='description'
+
+              rules={[{ required: true }]}
+            >
+              <Input.TextArea />
+            </Form.Item>
+            <Form.Item name='is_high_priority' valuePropName="checked" wrapperCol={{ offset: 8, span: 16 }}>
+              <Checkbox>High Priority</Checkbox>
+            </Form.Item>
+            <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+              <Button type="primary" htmlType="submit">
+                Submit
+              </Button>
+            </Form.Item>
+          </Form>
         </div>
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
     </div>
   )
 }
